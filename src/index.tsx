@@ -1,17 +1,42 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import { useState ,useEffect ,useRef} from "react";
+import ReactDOM  from "react-dom";
+import * as esbuild from 'esbuild-wasm';
 
+const App =() => { 
+    const [input , setInput] = useState('');
+    const [code , setCode] = useState('');
+    const refService = useRef<any>()
+    const startService = async () => {
+        refService.current = await esbuild.startService({
+            worker: true,
+            wasmURL: '/esbuild.wasm' 
+        });
+    }
+    const onClick = async () => { 
+        if (!refService.current)
+            return;
+            
+        const result = await refService.current.transform(input,{
+            loader : 'jsx',
+            target : 'es2015'
+        });
+        setCode(result.code); // result is object {code '' , map : '' , worning :''} 
+    } 
+
+    useEffect(()=> {
+        startService();
+    } ,[])
+    return <div>
+        <textarea value={input} onChange={e => setInput(e.target.value)} />
+        <div>
+            <button onClick={onClick}> Click♥ </button>
+        </div>
+        <pre>
+            {code}
+        </pre>
+    </div>
+}
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+    <App/> , 
+    document.querySelector('#ApplicationRoot')
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
